@@ -14,6 +14,28 @@ An end-to-end machine learning project that predicts whether an astronomical
 observation is likely to be a confirmed exoplanet, using public data from
 NASA's Kepler mission.
 
+## Live Demo
+
+[exoplanet-detection-w5bx.onrender.com](https://exoplanet-detection-w5bx.onrender.com)
+
+Hosted on Render's free tier — if the app has been idle for a while, the
+first load may take 30-60 seconds while the instance spins back up.
+
+### Screenshots
+
+**Overview**
+![Overview](screenshots/overview.webp)
+
+**Dataset Explorer**
+![Dataset Explorer](screenshots/dataset_explorer.webp)
+
+**Model Performance**
+![Model comparison](screenshots/model_comparison.webp)
+![Confusion matrix and feature importance](screenshots/confusion_matrix_feature_importance.webp)
+
+**Make a Prediction**
+![Make a Prediction](screenshots/make_a_prediction.webp)
+
 ## Project Goal
 
 Given measurements collected about a candidate transit signal (orbital
