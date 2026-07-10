@@ -10,14 +10,15 @@ venv/
 env/
 
 # Data (downloaded, not committed)
-data/raw/*
 data/processed/*
-!data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/processed/koi_clean.csv
+!data/processed/model.pkl
 
 # Trained models
 *.pkl
 *.joblib
+!data/processed/model.pkl
 
 # Environment / secrets
 .env
