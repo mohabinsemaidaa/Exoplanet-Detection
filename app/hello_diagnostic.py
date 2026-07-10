@@ -1,237 +1,127 @@
-"""Streamlit dashboard for the Exoplanet Detection project."""
+"""Staged diagnostic script to isolate which dependency/operation segfaults
+on Streamlit Community Cloud. Each stage prints a checkpoint before moving
+on, so if the process crashes, the last visible checkpoint pinpoints it.
+"""
 
-import sys
 from pathlib import Path
 
-import joblib
-import pandas as pd
-import plotly.express as px
 import streamlit as st
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+st.write("Stage 0: Streamlit import OK")
 
-from src.evaluate import CONFUSION_MATRIX_PATH, FEATURE_IMPORTANCE_PATH
-from src.preprocess import CORE_FEATURES, TARGET_COLUMN
-from src.train import MODEL_COMPARISON_PATH, MODEL_PATH, load_clean_data
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-st.set_page_config(page_title="Exoplanet Detection", layout="wide", page_icon="🔭")
+import pandas as pd
 
-EARTH_RADIUS_FEATURE = "koi_prad"
+st.write("Stage 1: pandas import OK")
 
-FEATURE_LABELS = {
-    "koi_period": "Orbital Period (days)",
-    "koi_duration": "Transit Duration (hours)",
-    "koi_depth": "Transit Depth (ppm)",
-    "koi_prad": "Planet Radius (Earth radii)",
-    "koi_teq": "Equilibrium Temperature (K)",
-    "koi_insol": "Insolation Flux (Earth flux)",
-    "koi_model_snr": "Transit Signal-to-Noise",
-    "koi_steff": "Stellar Effective Temperature (K)",
-    "koi_slogg": "Stellar Surface Gravity (log g)",
-    "koi_srad": "Stellar Radius (Solar radii)",
-    "koi_kepmag": "Kepler Magnitude",
-    "koi_impact": "Impact Parameter",
-}
+import numpy as np
 
-EXPLORER_FEATURES = ["koi_period", "koi_prad", "koi_depth", "koi_model_snr"]
+st.write(f"Stage 2: numpy import OK (version {np.__version__})")
 
-DISPOSITION_COLORS = {
-    "CONFIRMED": "#2ecc71",
-    "CANDIDATE": "#f1c40f",
-    "FALSE POSITIVE": "#e74c3c",
-}
+df = pd.read_csv(PROJECT_ROOT / "data" / "processed" / "koi_clean.csv")
+st.write(f"Stage 3: CSV loaded OK, shape={df.shape}")
 
+import sklearn
 
-def inject_theme():
-    st.markdown(
-        """
-        <style>
-        .hero {
-            padding: 2.5rem 2rem;
-            border-radius: 12px;
-            background: radial-gradient(circle at top left, #1b2735 0%, #090a0f 100%);
-            color: #e8ecf1;
-            margin-bottom: 1.5rem;
-        }
-        .hero h1 {
-            margin: 0;
-            font-size: 2.2rem;
-            letter-spacing: 0.02em;
-        }
-        .hero p {
-            margin-top: 0.5rem;
-            color: #a9b4c2;
-            font-size: 1.05rem;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+st.write(f"Stage 4: scikit-learn import OK (version {sklearn.__version__})")
 
+import joblib
 
-def show_hero():
-    st.markdown(
-        """
-        <div class="hero">
-            <h1>Exoplanet Detection</h1>
-            <p>Classifying NASA Kepler Objects of Interest as confirmed exoplanets,
-            candidates, or false positives, based on transit and stellar
-            measurements from the Kepler mission.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+st.write("Stage 5: joblib import OK")
 
+model = joblib.load(PROJECT_ROOT / "data" / "processed" / "model.pkl")
+st.write("Stage 6: model.pkl loaded OK")
 
-def show_summary_cards(df: pd.DataFrame):
-    counts = df[TARGET_COLUMN].value_counts()
-    columns = st.columns(4)
+sample = df.drop(columns=["koi_disposition"]).head(1)
+prediction = model.predict(sample)
+st.write(f"Stage 7: prediction OK: {prediction[0]}")
 
-    columns[0].metric("Total Observations", f"{len(df):,}")
-    columns[1].metric("Confirmed Exoplanets", f"{counts.get('CONFIRMED', 0):,}")
-    columns[2].metric("Candidates", f"{counts.get('CANDIDATE', 0):,}")
-    columns[3].metric("False Positives", f"{counts.get('FALSE POSITIVE', 0):,}")
+import matplotlib
 
+st.write(f"Stage 8: matplotlib import OK (version {matplotlib.__version__})")
 
-def show_overview():
-    show_hero()
-    df = load_clean_data()
-    show_summary_cards(df)
+import matplotlib.pyplot as plt
 
-    st.subheader("About This Project")
-    st.write(
-        "This project uses the Kepler Objects of Interest (KOI) cumulative "
-        "table from the NASA Exoplanet Archive. Each row is a candidate "
-        "transit signal, described by measurements such as orbital period, "
-        "transit depth, planet radius, and stellar properties."
-    )
-    st.write(
-        "Three models were compared — Logistic Regression, Random Forest, "
-        "and Gradient Boosting — and the best performer is used for "
-        "predictions in the **Make a Prediction** tab."
-    )
+fig, ax = plt.subplots()
+ax.plot([1, 2, 3])
+st.write("Stage 9: matplotlib figure created OK")
 
+import plotly
 
-def show_dataset_explorer():
-    st.header("Dataset Explorer")
-    df = load_clean_data()
+st.write(f"Stage 10: plotly import OK (version {plotly.__version__})")
 
-    st.write(
-        "Explore how confirmed exoplanets, candidates, and false positives "
-        "differ across key physical measurements. Choose two features below."
-    )
+import plotly.express as px
 
-    col1, col2 = st.columns(2)
-    x_feature = col1.selectbox(
-        "X-axis", EXPLORER_FEATURES, index=0, format_func=lambda f: FEATURE_LABELS[f]
-    )
-    y_feature = col2.selectbox(
-        "Y-axis", EXPLORER_FEATURES, index=1, format_func=lambda f: FEATURE_LABELS[f]
-    )
+fig2 = px.scatter(df, x="koi_period", y="koi_prad")
+st.write("Stage 11: plotly express chart created OK")
 
-    log_axes = st.checkbox(
-        "Use log scale (helpful since these features span a wide range)",
-        value=True,
-    )
-
-    fig = px.scatter(
-        df,
-        x=x_feature,
-        y=y_feature,
-        color=TARGET_COLUMN,
-        color_discrete_map=DISPOSITION_COLORS,
-        log_x=log_axes,
-        log_y=log_axes,
-        labels={**FEATURE_LABELS, TARGET_COLUMN: "Disposition"},
-        hover_data={feature: True for feature in CORE_FEATURES},
-        opacity=0.6,
-    )
-    fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        legend_title_text="Disposition",
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-
-def show_model_performance():
-    st.header("Model Performance")
-
-    st.subheader("Model Comparison")
-    comparison_df = pd.read_csv(MODEL_COMPARISON_PATH).set_index("model")
-    st.bar_chart(comparison_df["accuracy"])
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Confusion Matrix")
-        st.image(str(CONFUSION_MATRIX_PATH))
-    with col2:
-        st.subheader("Feature Importance")
-        st.image(str(FEATURE_IMPORTANCE_PATH))
-
-
-def show_result_card(prediction: str, confidence: float):
-    message = f"Predicted disposition: **{prediction}** ({confidence:.1%} confidence)"
-    if prediction == "CONFIRMED":
-        st.success(message)
-    elif prediction == "CANDIDATE":
-        st.warning(message)
-    else:
-        st.error(message)
-
-
-def show_earth_comparison(radius_in_earth_radii: float):
-    if radius_in_earth_radii <= 0:
-        return
-    st.caption(
-        f"🌍 At {radius_in_earth_radii:.2f} Earth radii, this candidate is "
-        f"{radius_in_earth_radii:.1f}x the size of Earth."
-    )
-
-
-def show_prediction():
-    st.header("Make a Prediction")
-    st.write(
-        "Enter the observed values for a candidate transit signal. Fields "
-        "default to the dataset's median values as a starting point."
-    )
-
-    df = load_clean_data()
-    medians = df[CORE_FEATURES].median()
-
-    inputs = {}
-    columns = st.columns(2)
-    for i, feature in enumerate(CORE_FEATURES):
-        with columns[i % 2]:
-            inputs[feature] = st.number_input(
-                FEATURE_LABELS[feature], value=float(medians[feature])
-            )
-
-    if st.button("Predict"):
-        model = joblib.load(MODEL_PATH)
-        input_df = pd.DataFrame([inputs])[CORE_FEATURES]
-
-        prediction = model.predict(input_df)[0]
-        confidence = max(model.predict_proba(input_df)[0])
-
-        show_result_card(prediction, confidence)
-        show_earth_comparison(inputs[EARTH_RADIUS_FEATURE])
-
-
-inject_theme()
-
-overview_tab, explorer_tab, performance_tab, prediction_tab = st.tabs(
-    ["Overview", "Dataset Explorer", "Model Performance", "Make a Prediction"]
+fig3 = px.scatter(
+    df,
+    x="koi_period",
+    y="koi_prad",
+    color="koi_disposition",
+    color_discrete_map={
+        "CONFIRMED": "#2ecc71",
+        "CANDIDATE": "#f1c40f",
+        "FALSE POSITIVE": "#e74c3c",
+    },
+    log_x=True,
+    log_y=True,
+    hover_data={col: True for col in df.columns},
+    opacity=0.6,
 )
+fig3.update_layout(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    legend_title_text="Disposition",
+)
+st.plotly_chart(fig3, use_container_width=True)
+st.write("Stage 12: rich plotly chart (log scale + hover_data + color map) created OK")
 
-with overview_tab:
-    show_overview()
+with open(PROJECT_ROOT / "reports" / "confusion_matrix.png", "rb") as f:
+    st.image(f.read())
+st.write("Stage 13: confusion_matrix.png loaded and displayed OK")
 
-with explorer_tab:
-    show_dataset_explorer()
+with open(PROJECT_ROOT / "reports" / "feature_importance.png", "rb") as f:
+    st.image(f.read())
+st.write("Stage 14: feature_importance.png loaded and displayed OK")
 
-with performance_tab:
-    show_model_performance()
+tab_a, tab_b = st.tabs(["Tab A", "Tab B"])
+with tab_a:
+    st.write("Tab A rendering")
+    df_a = pd.read_csv(PROJECT_ROOT / "data" / "processed" / "koi_clean.csv")
+    st.write(df_a.shape)
+with tab_b:
+    st.write("Tab B rendering")
+    model_b = joblib.load(PROJECT_ROOT / "data" / "processed" / "model.pkl")
+    st.write(model_b.predict(sample)[0])
+st.write("Stage 15: st.tabs() with simultaneous rendering OK")
 
-with prediction_tab:
-    show_prediction()
+from sklearn.model_selection import train_test_split
+
+st.write("Stage 16: sklearn.model_selection.train_test_split import OK")
+
+X_train, X_test, y_train, y_test = train_test_split(
+    df.drop(columns=["koi_disposition"]), df["koi_disposition"], test_size=0.2, random_state=42
+)
+st.write(f"Stage 17: train_test_split executed OK, X_train shape={X_train.shape}")
+
+from sklearn.ensemble import RandomForestClassifier
+
+st.write("Stage 18: sklearn.ensemble.RandomForestClassifier import OK")
+
+from sklearn.linear_model import LogisticRegression
+
+st.write("Stage 19: sklearn.linear_model.LogisticRegression import OK")
+
+from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report
+
+st.write("Stage 20: sklearn.metrics (ConfusionMatrixDisplay etc.) import OK")
+
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+st.write("Stage 21: sklearn.pipeline/preprocessing import OK")
+
+st.success("ALL STAGES PASSED — no crash!")
