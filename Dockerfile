@@ -9,7 +9,8 @@ COPY src/ src/
 COPY api/ api/
 COPY app/ app/
 COPY reports/ reports/
+COPY data/processed/ data/processed/
 
-EXPOSE 8000 8501
+EXPOSE 8000 8501 7860
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["streamlit", "run", "app/dashboard.py", "--server.address", "0.0.0.0", "--server.port", "7860"]

@@ -1,3 +1,13 @@
+---
+title: Exoplanet Detection
+emoji: 🔭
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Exoplanet Detection
 
 An end-to-end machine learning project that predicts whether an astronomical
