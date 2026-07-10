@@ -22,10 +22,6 @@ It was chosen because it is:
 - structured with a clear classification target (`CONFIRMED`, `CANDIDATE`,
   `FALSE POSITIVE`) already provided by domain experts
 
-## Project Status
-
-🚧 Early development. See sections below as they are completed.
-
 ## Installation
 
 ```bash
@@ -44,6 +40,16 @@ python3 src/download_data.py
 
 This saves the KOI cumulative table to `data/raw/koi_cumulative.csv`
 (not committed to the repo — download it fresh instead).
+
+Clean the data and train the model:
+
+```bash
+python3 src/preprocess.py
+python3 -m src.train
+```
+
+This produces `data/processed/koi_clean.csv` and `data/processed/model.pkl`,
+both required by the API and dashboard below.
 
 Run the Streamlit dashboard:
 
@@ -72,12 +78,55 @@ This starts the API at `http://localhost:8000` and the dashboard at
 
 ## Model Comparison
 
-_Coming soon._
+Three models were trained on the same 12 core physical features and
+compared on a held-out 20% test set:
+
+| Model | Accuracy | Notes |
+|---|---|---|
+| Logistic Regression | 66.1% | Simple, interpretable baseline |
+| Random Forest | 78.2% | Handles non-linear feature interactions, robust to outliers |
+| **Gradient Boosting** | **78.5%** | Best overall; selected as the final model |
+
+Gradient Boosting was chosen because it had the highest test accuracy and,
+importantly, the best recall on the hardest class (`CANDIDATE`).
 
 ## Results
 
-_Coming soon._
+The final Gradient Boosting model reaches **78.5% accuracy** on the test
+set. Performance varies noticeably by class:
+
+| Class | Precision | Recall | F1-score |
+|---|---|---|---|
+| CANDIDATE | 0.57 | 0.58 | 0.57 |
+| CONFIRMED | 0.82 | 0.86 | 0.84 |
+| FALSE POSITIVE | 0.86 | 0.82 | 0.84 |
+
+The model is noticeably weaker at identifying `CANDIDATE` observations than
+the other two classes. This makes sense: candidates are, by definition, the
+ambiguous cases that haven't yet been confirmed or ruled out, so they sit
+between the other two classes rather than having a distinct signature.
+
+### Confusion Matrix
+
+![Confusion matrix](reports/confusion_matrix.png)
+
+### Feature Importance
+
+![Feature importance](reports/feature_importance.png)
+
+The two most influential features are `koi_prad` (planet radius) and
+`koi_model_snr` (transit signal-to-noise ratio) — consistent with the
+physical intuition that a plausible planet size combined with a clean,
+strong transit signal is what most reliably distinguishes real exoplanets
+from noise and false positives.
 
 ## Future Improvements
 
-_Coming soon._
+- Tune hyperparameters (e.g. grid search over Gradient Boosting's learning
+  rate and tree depth) rather than using scikit-learn's defaults
+- Try imputing missing values instead of dropping incomplete rows, to see
+  whether the extra ~3.8% of retained data improves `CANDIDATE` recall
+- Add cross-validation instead of a single train/test split for more
+  robust accuracy estimates
+- Experiment with additional KOI columns beyond the 12 core features used
+  here, now that leakage-prone columns have been identified and excluded
