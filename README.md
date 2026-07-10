@@ -57,6 +57,19 @@ Run the prediction API:
 uvicorn api.main:app --reload
 ```
 
+### Running with Docker
+
+Make sure you've already run the download, preprocessing, and training
+scripts locally at least once (Docker mounts `data/` from the host rather
+than retraining inside the container):
+
+```bash
+docker compose up --build
+```
+
+This starts the API at `http://localhost:8000` and the dashboard at
+`http://localhost:8501`.
+
 ## Model Comparison
 
 _Coming soon._
