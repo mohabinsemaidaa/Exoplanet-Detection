@@ -1,9 +1,14 @@
 """Streamlit dashboard for the Exoplanet Detection project."""
 
+import sys
+from pathlib import Path
+
 import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
 import streamlit as st
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.evaluate import CONFUSION_MATRIX_PATH, FEATURE_IMPORTANCE_PATH
 from src.preprocess import CORE_FEATURES, TARGET_COLUMN

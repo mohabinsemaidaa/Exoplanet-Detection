@@ -1,9 +1,14 @@
 """Small FastAPI app serving exoplanet disposition predictions."""
 
+import sys
+from pathlib import Path
+
 import joblib
 import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.preprocess import CORE_FEATURES
 from src.train import MODEL_PATH
