@@ -56,4 +56,46 @@ import plotly.express as px
 fig2 = px.scatter(df, x="koi_period", y="koi_prad")
 st.write("Stage 11: plotly express chart created OK")
 
+fig3 = px.scatter(
+    df,
+    x="koi_period",
+    y="koi_prad",
+    color="koi_disposition",
+    color_discrete_map={
+        "CONFIRMED": "#2ecc71",
+        "CANDIDATE": "#f1c40f",
+        "FALSE POSITIVE": "#e74c3c",
+    },
+    log_x=True,
+    log_y=True,
+    hover_data={col: True for col in df.columns},
+    opacity=0.6,
+)
+fig3.update_layout(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    legend_title_text="Disposition",
+)
+st.plotly_chart(fig3, use_container_width=True)
+st.write("Stage 12: rich plotly chart (log scale + hover_data + color map) created OK")
+
+with open(PROJECT_ROOT / "reports" / "confusion_matrix.png", "rb") as f:
+    st.image(f.read())
+st.write("Stage 13: confusion_matrix.png loaded and displayed OK")
+
+with open(PROJECT_ROOT / "reports" / "feature_importance.png", "rb") as f:
+    st.image(f.read())
+st.write("Stage 14: feature_importance.png loaded and displayed OK")
+
+tab_a, tab_b = st.tabs(["Tab A", "Tab B"])
+with tab_a:
+    st.write("Tab A rendering")
+    df_a = pd.read_csv(PROJECT_ROOT / "data" / "processed" / "koi_clean.csv")
+    st.write(df_a.shape)
+with tab_b:
+    st.write("Tab B rendering")
+    model_b = joblib.load(PROJECT_ROOT / "data" / "processed" / "model.pkl")
+    st.write(model_b.predict(sample)[0])
+st.write("Stage 15: st.tabs() with simultaneous rendering OK")
+
 st.success("ALL STAGES PASSED — no crash!")
