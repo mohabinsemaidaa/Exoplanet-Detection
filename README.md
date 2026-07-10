@@ -24,10 +24,15 @@ It was chosen because it is:
 
 ## Installation
 
+`requirements.txt` covers only what's needed to run the Streamlit dashboard.
+For everything else (downloading data, training, the API, notebooks, tests),
+use `requirements-dev.txt` instead, which includes `requirements.txt` plus
+development tools.
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
 ## Usage
