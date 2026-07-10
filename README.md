@@ -45,6 +45,18 @@ python3 src/download_data.py
 This saves the KOI cumulative table to `data/raw/koi_cumulative.csv`
 (not committed to the repo — download it fresh instead).
 
+Run the Streamlit dashboard:
+
+```bash
+streamlit run app/dashboard.py
+```
+
+Run the prediction API:
+
+```bash
+uvicorn api.main:app --reload
+```
+
 ## Model Comparison
 
 _Coming soon._
