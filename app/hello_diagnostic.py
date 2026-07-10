@@ -3,13 +3,18 @@ on Streamlit Community Cloud. Each stage prints a checkpoint before moving
 on, so if the process crashes, the last visible checkpoint pinpoints it.
 """
 
+import sys
 from pathlib import Path
 
 import streamlit as st
 
+st.set_page_config(page_title="Exoplanet Detection", layout="wide", page_icon="🔭")
+
+st.write("Stage -1: st.set_page_config OK")
 st.write("Stage 0: Streamlit import OK")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 import pandas as pd
 
@@ -19,27 +24,68 @@ import numpy as np
 
 st.write(f"Stage 2: numpy import OK (version {np.__version__})")
 
-df = pd.read_csv(PROJECT_ROOT / "data" / "processed" / "koi_clean.csv")
-st.write(f"Stage 3: CSV loaded OK, shape={df.shape}")
+from src.preprocess import CORE_FEATURES, TARGET_COLUMN
 
-import sklearn
+st.write("Stage 2.5: from src.preprocess import CORE_FEATURES, TARGET_COLUMN OK")
 
-st.write(f"Stage 4: scikit-learn import OK (version {sklearn.__version__})")
+from src.train import MODEL_COMPARISON_PATH, MODEL_PATH, load_clean_data
+
+st.write("Stage 2.6: from src.train import ... OK (this imports sklearn.ensemble, "
+         "sklearn.linear_model, sklearn.model_selection, sklearn.pipeline, "
+         "sklearn.preprocessing all at once)")
+
+from src.evaluate import CONFUSION_MATRIX_PATH, FEATURE_IMPORTANCE_PATH
+
+st.write("Stage 2.7: from src.evaluate import ... OK (this imports matplotlib.pyplot "
+         "and sklearn.metrics.ConfusionMatrixDisplay)")
+
+df = load_clean_data()
+st.write(f"Stage 3: CSV loaded via src.train.load_clean_data() OK, shape={df.shape}")
 
 import joblib
 
 st.write("Stage 5: joblib import OK")
 
-model = joblib.load(PROJECT_ROOT / "data" / "processed" / "model.pkl")
-st.write("Stage 6: model.pkl loaded OK")
+model = joblib.load(MODEL_PATH)
+st.write("Stage 6: model.pkl loaded via src.train.MODEL_PATH OK")
 
-sample = df.drop(columns=["koi_disposition"]).head(1)
+sample = df[CORE_FEATURES].head(1)
 prediction = model.predict(sample)
 st.write(f"Stage 7: prediction OK: {prediction[0]}")
 
-import matplotlib
 
-st.write(f"Stage 8: matplotlib import OK (version {matplotlib.__version__})")
+def inject_theme():
+    st.markdown(
+        """
+        <style>
+        .hero {
+            padding: 2.5rem 2rem;
+            border-radius: 12px;
+            background: radial-gradient(circle at top left, #1b2735 0%, #090a0f 100%);
+            color: #e8ecf1;
+            margin-bottom: 1.5rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def show_hero():
+    st.markdown(
+        """
+        <div class="hero">
+            <h1>Exoplanet Detection</h1>
+            <p>Diagnostic test of the hero banner's unsafe_allow_html injection.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+inject_theme()
+show_hero()
+st.write("Stage 8: inject_theme() + show_hero() (unsafe_allow_html CSS/HTML) OK")
 
 import matplotlib.pyplot as plt
 
@@ -47,81 +93,39 @@ fig, ax = plt.subplots()
 ax.plot([1, 2, 3])
 st.write("Stage 9: matplotlib figure created OK")
 
-import plotly
-
-st.write(f"Stage 10: plotly import OK (version {plotly.__version__})")
-
 import plotly.express as px
-
-fig2 = px.scatter(df, x="koi_period", y="koi_prad")
-st.write("Stage 11: plotly express chart created OK")
 
 fig3 = px.scatter(
     df,
     x="koi_period",
     y="koi_prad",
-    color="koi_disposition",
-    color_discrete_map={
-        "CONFIRMED": "#2ecc71",
-        "CANDIDATE": "#f1c40f",
-        "FALSE POSITIVE": "#e74c3c",
-    },
+    color=TARGET_COLUMN,
     log_x=True,
     log_y=True,
-    hover_data={col: True for col in df.columns},
+    hover_data={feature: True for feature in CORE_FEATURES},
     opacity=0.6,
 )
-fig3.update_layout(
-    template="plotly_dark",
-    paper_bgcolor="rgba(0,0,0,0)",
-    legend_title_text="Disposition",
-)
+fig3.update_layout(template="plotly_dark", paper_bgcolor="rgba(0,0,0,0)")
 st.plotly_chart(fig3, use_container_width=True)
-st.write("Stage 12: rich plotly chart (log scale + hover_data + color map) created OK")
+st.write("Stage 12: rich plotly chart created OK")
 
-with open(PROJECT_ROOT / "reports" / "confusion_matrix.png", "rb") as f:
-    st.image(f.read())
-st.write("Stage 13: confusion_matrix.png loaded and displayed OK")
+st.image(str(CONFUSION_MATRIX_PATH))
+st.write("Stage 13: confusion_matrix.png loaded OK")
 
-with open(PROJECT_ROOT / "reports" / "feature_importance.png", "rb") as f:
-    st.image(f.read())
-st.write("Stage 14: feature_importance.png loaded and displayed OK")
+st.image(str(FEATURE_IMPORTANCE_PATH))
+st.write("Stage 14: feature_importance.png loaded OK")
+
+comparison_df = pd.read_csv(MODEL_COMPARISON_PATH).set_index("model")
+st.bar_chart(comparison_df["accuracy"])
+st.write("Stage 14.5: model_comparison.csv bar chart OK")
 
 tab_a, tab_b = st.tabs(["Tab A", "Tab B"])
 with tab_a:
     st.write("Tab A rendering")
-    df_a = pd.read_csv(PROJECT_ROOT / "data" / "processed" / "koi_clean.csv")
-    st.write(df_a.shape)
+    st.write(df.shape)
 with tab_b:
     st.write("Tab B rendering")
-    model_b = joblib.load(PROJECT_ROOT / "data" / "processed" / "model.pkl")
-    st.write(model_b.predict(sample)[0])
+    st.write(model.predict(sample)[0])
 st.write("Stage 15: st.tabs() with simultaneous rendering OK")
-
-from sklearn.model_selection import train_test_split
-
-st.write("Stage 16: sklearn.model_selection.train_test_split import OK")
-
-X_train, X_test, y_train, y_test = train_test_split(
-    df.drop(columns=["koi_disposition"]), df["koi_disposition"], test_size=0.2, random_state=42
-)
-st.write(f"Stage 17: train_test_split executed OK, X_train shape={X_train.shape}")
-
-from sklearn.ensemble import RandomForestClassifier
-
-st.write("Stage 18: sklearn.ensemble.RandomForestClassifier import OK")
-
-from sklearn.linear_model import LogisticRegression
-
-st.write("Stage 19: sklearn.linear_model.LogisticRegression import OK")
-
-from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report
-
-st.write("Stage 20: sklearn.metrics (ConfusionMatrixDisplay etc.) import OK")
-
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
-
-st.write("Stage 21: sklearn.pipeline/preprocessing import OK")
 
 st.success("ALL STAGES PASSED — no crash!")
