@@ -28,11 +28,22 @@ It was chosen because it is:
 
 ## Installation
 
-_Coming soon._
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
 ## Usage
 
-_Coming soon._
+Download the dataset:
+
+```bash
+python3 src/download_data.py
+```
+
+This saves the KOI cumulative table to `data/raw/koi_cumulative.csv`
+(not committed to the repo — download it fresh instead).
 
 ## Model Comparison
 
